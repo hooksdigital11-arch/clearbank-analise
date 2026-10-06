@@ -1,0 +1,158 @@
+{
+  "gerado_em": "2026-10-06",
+  "total_transacoes_lidas": 23,
+  "total_transacoes_validas": 17,
+  "total_transacoes_invalidas": 6,
+  "periodo_analisado": {
+    "data_inicial": "2026-01-05",
+    "data_final": "2026-04-05",
+    "dias_entre_transacoes": 90
+  },
+  "resumo_geral": {
+    "quantidade": 17,
+    "total_credito": 30100.0,
+    "total_debito": 19315.7,
+    "saldo": 10784.3,
+    "media_por_transacao": 2906.81,
+    "maior_transacao": {
+      "id": 9,
+      "cliente_id": "CLI001",
+      "data": "2026-02-14",
+      "tipo": "credito",
+      "valor": 12500.0,
+      "descricao": "Bônus anual",
+      "categoria": "bonus"
+    },
+    "menor_transacao": {
+      "id": 17,
+      "cliente_id": "CLI003",
+      "data": "2026-04-05",
+      "tipo": "debito",
+      "valor": 49.9,
+      "descricao": "Streaming",
+      "categoria": "assinatura"
+    }
+  },
+  "resumo_mensal": {
+    "2026-01": {
+      "quantidade": 5,
+      "total_credito": 5600.0,
+      "total_debito": 750.5,
+      "saldo": 4849.5,
+      "media_por_transacao": 1270.1,
+      "maior_transacao": {
+        "id": 1,
+        "cliente_id": "CLI001",
+        "data": "2026-01-05",
+        "tipo": "credito",
+        "valor": 3500.0,
+        "descricao": "Salário janeiro",
+        "categoria": "salario"
+      },
+      "menor_transacao": {
+        "id": 3,
+        "cliente_id": "CLI001",
+        "data": "2026-01-20",
+        "tipo": "debito",
+        "valor": 120.0,
+        "descricao": "Internet",
+        "categoria": "conta"
+      }
+    },
+    "2026-02": {
+      "quantidade": 5,
+      "total_credito": 16700.0,
+      "total_debito": 11625.3,
+      "saldo": 5074.7,
+      "media_por_transacao": 5665.06,
+      "maior_transacao": {
+        "id": 9,
+        "cliente_id": "CLI001",
+        "data": "2026-02-14",
+        "tipo": "credito",
+        "valor": 12500.0,
+        "descricao": "Bônus anual",
+        "categoria": "bonus"
+      },
+      "menor_transacao": {
+        "id": 8,
+        "cliente_id": "CLI003",
+        "data": "2026-02-10",
+        "tipo": "debito",
+        "valor": 235.3,
+        "descricao": "Farmácia",
+        "categoria": "saude"
+      }
+    },
+    "2026-03": {
+      "quantidade": 4,
+      "total_credito": 4800.0,
+      "total_debito": 390.0,
+      "saldo": 4410.0,
+      "media_por_transacao": 1297.5,
+      "maior_transacao": {
+        "id": 11,
+        "cliente_id": "CLI001",
+        "data": "2026-03-02",
+        "tipo": "credito",
+        "valor": 4000.0,
+        "descricao": "Salário março",
+        "categoria": "salario"
+      },
+      "menor_transacao": {
+        "id": 13,
+        "cliente_id": "CLI003",
+        "data": "2026-03-17",
+        "tipo": "debito",
+        "valor": 170.0,
+        "descricao": "Transporte",
+        "categoria": "transporte"
+      }
+    },
+    "2026-04": {
+      "quantidade": 3,
+      "total_credito": 3000.0,
+      "total_debito": 6549.9,
+      "saldo": -3549.9,
+      "media_por_transacao": 3183.3,
+      "maior_transacao": {
+        "id": 15,
+        "cliente_id": "CLI002",
+        "data": "2026-04-01",
+        "tipo": "debito",
+        "valor": 6500.0,
+        "descricao": "Matrícula de curso",
+        "categoria": "educacao"
+      },
+      "menor_transacao": {
+        "id": 17,
+        "cliente_id": "CLI003",
+        "data": "2026-04-05",
+        "tipo": "debito",
+        "valor": 49.9,
+        "descricao": "Streaming",
+        "categoria": "assinatura"
+      }
+    }
+  },
+  "transacoes_suspeitas": [
+    {
+      "id": 9,
+      "cliente_id": "CLI001",
+      "data": "2026-02-14",
+      "tipo": "credito",
+      "valor": 12500.0,
+      "descricao": "Bônus anual",
+      "categoria": "bonus"
+    },
+    {
+      "id": 10,
+      "cliente_id": "CLI002",
+      "data": "2026-02-18",
+      "tipo": "debito",
+      "valor": 10500.0,
+      "descricao": "Notebook para trabalho",
+      "categoria": "equipamento"
+    }
+  ]
+}

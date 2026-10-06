@@ -1,0 +1,24 @@
+id,data,cliente_id,tipo,valor,descricao,categoria
+1,2026-01-05,CLI001,credito,3500.00,Salário janeiro,salario
+2,2026-01-12,CLI002,debito,180.50,Supermercado,compra
+3,2026-01-20,CLI001,debito,120.00,Internet,conta
+4,2026-01-25,CLI003,debito,450.00,Transporte,transporte
+5,2026-01-28,CLI001,credito,2100.00,Projeto freelancer,servico
+6,2026-02-03,CLI001,credito,4200.00,Salário fevereiro,salario
+7,2026-02-06,CLI002,debito,890.00,Conta de energia,conta
+8,2026-02-10,CLI003,debito,235.30,Farmácia,saude
+9,2026-02-14,CLI001,credito,12500.00,Bônus anual,bonus
+10,2026-02-18,CLI002,debito,10500.00,Notebook para trabalho,equipamento
+11,2026-03-02,CLI001,credito,4000.00,Salário março,salario
+12,2026-03-08,CLI002,debito,220.00,Supermercado,compra
+13,2026-03-17,CLI003,debito,170.00,Transporte,transporte
+14,2026-03-25,CLI001,credito,800.00,Serviço extra,servico
+15,2026-04-01,CLI002,debito,6500.00,Matrícula de curso,educacao
+16,2026-04-04,CLI001,credito,3000.00,Reembolso médico,reembolso
+17,2026-04-05,CLI003,debito,49.90,Streaming,assinatura
+18,2026-04-08,,debito,200.00,Cliente ausente,transferencia
+19,2026-04-09,CLI001,debito,abc,Valor ilegível,compra
+20,2026-13-10,CLI002,debito,80.00,Data incorreta,compra
+21,2026-04-11,CLI002,transferencia,100.00,Tipo não aceito,outros
+22,2026-04-12,CLI003,credito,-15.00,Valor negativo,outros
+6,2026-04-14,CLI004,debito,30.00,ID duplicado,compra
