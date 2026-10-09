@@ -85,6 +85,19 @@ class LeituraEValidacaoTests(unittest.TestCase):
         }
         self.assertIsNone(validar_transacao(registro, 2))
 
+    def test_valor_decimal_extremo_e_descartado_sem_interromper_a_leitura(self):
+        linhas = [
+            ["1", "2026-01-05", "CLI001", "credito", "1e100", "Valor extremo", "outros"],
+            ["2", "2026-01-06", "CLI001", "debito", "25.50", "Válida depois do erro", "compra"],
+        ]
+        with tempfile.TemporaryDirectory() as diretorio:
+            caminho = self.escrever_csv(diretorio, linhas)
+            transacoes, lidas, validas, invalidas = ler_transacoes(caminho)
+
+        self.assertEqual((lidas, validas, invalidas), (2, 1, 1))
+        self.assertEqual([item.id for item in transacoes], [2])
+        self.assertEqual(transacoes[0].valor, Decimal("25.50"))
+
     def test_csv_de_exemplo_tem_colunas_de_acordo_com_o_enunciado(self):
         with (ROOT / "dados/transacoes.csv").open(encoding="utf-8", newline="") as arquivo:
             leitor = csv.DictReader(arquivo)
