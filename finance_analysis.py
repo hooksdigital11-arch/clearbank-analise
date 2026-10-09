@@ -68,7 +68,7 @@ def validar_transacao(registro: Mapping[str, str | None], linha: int) -> Transac
 
     texto_valor = (registro.get("valor") or "").strip().replace(",", ".")
     try:
-        valor = Decimal(texto_valor)
+        valor = Decimal(texto_valor).quantize(CENTAVOS)
     except (InvalidOperation, ValueError):
         return None
     if not valor.is_finite() or valor <= 0:
@@ -84,7 +84,7 @@ def validar_transacao(registro: Mapping[str, str | None], linha: int) -> Transac
         data=data_transacao,
         cliente_id=cliente_id,
         tipo=tipo,
-        valor=valor.quantize(CENTAVOS),
+        valor=valor,
         descricao=descricao,
         categoria=categoria,
         linha=linha,
