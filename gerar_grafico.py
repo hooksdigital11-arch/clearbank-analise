@@ -1,4 +1,4 @@
-"""Gera um gráfico comparativo de crédito, débito e saldo mensais."""
+"""Gera barras do saldo mensal, conforme a opção A do desafio."""
 
 from __future__ import annotations
 
@@ -15,18 +15,16 @@ def gerar_grafico(caminho_csv: str | Path, caminho_imagem: str | Path) -> Path:
     destino = Path(caminho_imagem)
     destino.parent.mkdir(parents=True, exist_ok=True)
     meses = list(resumo)
-    largura = 0.25
     posicoes = list(range(len(meses)))
+    saldos = [resumo[mes]["saldo"] for mes in meses]
 
     figura, eixo = plt.subplots(figsize=(10, 5))
-    eixo.bar([x - largura for x in posicoes], [resumo[m]["total_credito"] for m in meses], largura, label="Créditos")
-    eixo.bar(posicoes, [resumo[m]["total_debito"] for m in meses], largura, label="Débitos")
-    eixo.bar([x + largura for x in posicoes], [resumo[m]["saldo"] for m in meses], largura, label="Saldo")
-    eixo.set_title("Resumo financeiro mensal")
+    eixo.bar(posicoes, saldos, color=["#237a57" if saldo >= 0 else "#b83232" for saldo in saldos])
+    eixo.axhline(0, color="#333333", linewidth=0.8)
+    eixo.set_title("Saldo financeiro por mês")
     eixo.set_xlabel("Mês")
     eixo.set_ylabel("Valor (R$)")
     eixo.set_xticks(posicoes, meses)
-    eixo.legend()
     eixo.grid(axis="y", alpha=0.25)
     figura.tight_layout()
     figura.savefig(destino, dpi=160)

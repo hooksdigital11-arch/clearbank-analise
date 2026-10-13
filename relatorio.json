@@ -1,12 +1,14 @@
 {
-  "gerado_em": "2026-10-06",
+  "gerado_em": "2026-10-13",
   "total_transacoes_lidas": 23,
   "total_transacoes_validas": 17,
   "total_transacoes_invalidas": 6,
   "periodo_analisado": {
     "data_inicial": "2026-01-05",
     "data_final": "2026-04-05",
-    "dias_entre_transacoes": 90
+    "dias_entre_transacoes": 90,
+    "dias_desde_mais_antiga": 281,
+    "dias_desde_mais_recente": 191
   },
   "resumo_geral": {
     "quantidade": 17,

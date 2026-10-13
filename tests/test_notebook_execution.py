@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import json
+import ast
 import os
-import shutil
 import sys
 import tempfile
 from types import ModuleType
@@ -14,13 +16,27 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class NotebookExecutionTests(unittest.TestCase):
+    def test_notebook_tem_saidas_salvas_e_mesmas_funcoes_do_modulo(self):
+        notebook = json.loads((ROOT / "desafio-final.ipynb").read_text(encoding="utf-8"))
+        code_cells = [c for c in notebook["cells"] if c["cell_type"] == "code"]
+        self.assertTrue(all(c["execution_count"] is not None for c in code_cells))
+        self.assertFalse(any(o["output_type"] == "error" for c in code_cells for o in c["outputs"]))
+        self.assertTrue(any("image/png" in o.get("data", {}) for c in code_cells for o in c["outputs"]))
+        definitions = {}
+        for cell in code_cells:
+            for node in ast.parse("".join(cell["source"])).body:
+                if isinstance(node, ast.FunctionDef):
+                    definitions[node.name] = ast.dump(node, include_attributes=False)
+        for node in ast.parse((ROOT / "finance_analysis.py").read_text()).body:
+            if isinstance(node, ast.FunctionDef) and node.name != "main":
+                self.assertEqual(definitions[node.name], ast.dump(node, include_attributes=False), node.name)
+
     def test_notebook_executa_todas_as_celulas_de_codigo(self):
         notebook = json.loads((ROOT / "desafio-final.ipynb").read_text(encoding="utf-8"))
         cells = notebook.get("cells", [])
         self.assertGreaterEqual(len(cells), 8)
 
         with tempfile.TemporaryDirectory() as diretorio:
-            shutil.copytree(ROOT / "dados", Path(diretorio) / "dados")
             modulo = ModuleType("notebook_test")
             namespace = modulo.__dict__
             sys.modules[modulo.__name__] = modulo

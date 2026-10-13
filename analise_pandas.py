@@ -1,71 +1,67 @@
-"""Reproduz as métricas mensais usando pandas para comparar com a versão nativa."""
+"""Alternativa com pandas, usando as mesmas regras monetárias da análise nativa."""
 
 from __future__ import annotations
 
+import csv
+from decimal import Decimal
 from pathlib import Path
 
 import pandas as pd
 
-
-COLUNAS = {"id", "data", "cliente_id", "tipo", "valor", "descricao", "categoria"}
+from finance_analysis import CABECALHOS_OBRIGATORIOS, _em_reais, validar_transacao
 
 
 def ler_dados_validos(caminho: str | Path) -> pd.DataFrame:
-    """Lê o CSV e remove registros inválidos, mantendo uma linha por ID."""
+    """Lê com pandas e aplica o validador comum antes de agrupar os dados."""
     arquivo = Path(caminho)
     if not arquivo.is_file():
         raise FileNotFoundError(f"Arquivo não encontrado: {arquivo}")
 
-    dados = pd.read_csv(arquivo, dtype=str, encoding="utf-8-sig")
+    # pandas renomeia cabeçalhos repetidos; confira-os antes para não ocultar o erro.
+    with arquivo.open(encoding="utf-8-sig", newline="") as entrada:
+        nomes = [nome.strip().lower() for nome in next(csv.reader(entrada), [])]
+    if len(nomes) != len(set(nomes)):
+        raise ValueError("Cabeçalhos duplicados no CSV.")
+    dados = pd.read_csv(arquivo, dtype=str, encoding="utf-8-sig", keep_default_na=False)
     dados.columns = [coluna.strip().lower() for coluna in dados.columns]
-    ausentes = COLUNAS - set(dados.columns)
+    ausentes = CABECALHOS_OBRIGATORIOS - set(dados.columns)
     if ausentes:
         raise ValueError(f"Colunas obrigatórias ausentes: {', '.join(sorted(ausentes))}")
+    if dados.columns.duplicated().any():
+        raise ValueError("Cabeçalhos duplicados no CSV.")
 
-    dados["id_num"] = pd.to_numeric(dados["id"].str.strip(), errors="coerce")
-    dados["data_dt"] = pd.to_datetime(dados["data"].str.strip(), format="%Y-%m-%d", errors="coerce")
-    dados["valor_num"] = pd.to_numeric(
-        dados["valor"].str.strip().str.replace(",", ".", regex=False), errors="coerce"
+    transacoes = [
+        transacao
+        for linha, registro in enumerate(dados.to_dict("records"), start=2)
+        if (transacao := validar_transacao(registro, linha)) is not None
+    ]
+    validas = pd.DataFrame(
+        [{"id": item.id, "mes": item.data.strftime("%Y-%m"),
+          "tipo": item.tipo, "valor": item.valor} for item in transacoes],
+        columns=["id", "mes", "tipo", "valor"],
     )
-    dados["tipo_limpo"] = dados["tipo"].str.strip().str.lower()
-    dados["cliente_limpo"] = dados["cliente_id"].fillna("").str.strip()
-    dados["descricao_limpa"] = dados["descricao"].fillna("").str.strip()
-
-    validas = dados[
-        dados["id_num"].notna()
-        & (dados["id_num"] % 1 == 0)
-        & (dados["cliente_limpo"] != "")
-        & dados["data_dt"].notna()
-        & dados["tipo_limpo"].isin(["credito", "debito"])
-        & dados["valor_num"].notna()
-        & (dados["valor_num"] > 0)
-        & (dados["descricao_limpa"] != "")
-    ].copy()
-    validas["id_num"] = validas["id_num"].astype(int)
-    validas = validas.drop_duplicates(subset="id_num", keep="first")
-    validas["mes"] = validas["data_dt"].dt.strftime("%Y-%m")
-    return validas
+    return validas.drop_duplicates(subset="id", keep="first")
 
 
 def gerar_resumo_pandas(caminho: str | Path) -> dict[str, dict]:
-    """Retorna contagem, totais, saldo, média, maior e menor por mês."""
+    """Agrupa com groupby e mantém Decimal até a exportação em centavos."""
     dados = ler_dados_validos(caminho)
     if dados.empty:
         raise ValueError("Não há transações válidas para analisar.")
 
     resumo: dict[str, dict] = {}
     for mes, grupo in dados.groupby("mes", sort=True):
-        valores = grupo["valor_num"]
-        credito = round(float(grupo.loc[grupo["tipo_limpo"] == "credito", "valor_num"].sum()), 2)
-        debito = round(float(grupo.loc[grupo["tipo_limpo"] == "debito", "valor_num"].sum()), 2)
+        valores = grupo["valor"]
+        credito = sum(grupo.loc[grupo["tipo"] == "credito", "valor"], Decimal("0"))
+        debito = sum(grupo.loc[grupo["tipo"] == "debito", "valor"], Decimal("0"))
         resumo[mes] = {
             "quantidade": int(len(grupo)),
-            "total_credito": credito,
-            "total_debito": debito,
-            "saldo": round(credito - debito, 2),
-            "media_por_transacao": round(float(valores.mean()), 2),
-            "maior_valor": round(float(valores.max()), 2),
-            "menor_valor": round(float(valores.min()), 2),
+            "total_credito": _em_reais(credito),
+            "total_debito": _em_reais(debito),
+            "saldo": _em_reais(credito - debito),
+            "media_por_transacao": _em_reais(sum(valores, Decimal("0")) / len(grupo)),
+            "maior_valor": _em_reais(max(valores)),
+            "menor_valor": _em_reais(min(valores)),
         }
     return resumo
 

@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
+import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
@@ -14,7 +16,8 @@ from pathlib import Path
 from typing import Iterable, Mapping
 
 
-LIMITE_SUSPEITO = Decimal("10000.00")
+LIMITE_SUSPEITO = 10000.00
+LIMITE_SUSPEITO_DECIMAL = Decimal(str(LIMITE_SUSPEITO))
 CENTAVOS = Decimal("0.01")
 CABECALHOS_OBRIGATORIOS = {
     "id",
@@ -45,8 +48,11 @@ class Transacao:
 
 def validar_transacao(registro: Mapping[str, str | None], linha: int) -> Transacao | None:
     """Valida uma linha e retorna a transação limpa, ou None quando inválida."""
+    texto_id = (registro.get("id") or "").strip()
+    if not re.fullmatch(r"[+-]?[0-9]+", texto_id):
+        return None
     try:
-        id_transacao = int((registro.get("id") or "").strip())
+        id_transacao = int(texto_id)
     except (ValueError, AttributeError):
         return None
 
@@ -59,7 +65,7 @@ def validar_transacao(registro: Mapping[str, str | None], linha: int) -> Transac
         data_transacao = datetime.strptime(texto_data, "%Y-%m-%d")
     except (ValueError, TypeError):
         return None
-    if data_transacao.strftime("%Y-%m-%d") != texto_data:
+    if data_transacao.date().isoformat() != texto_data:
         return None
 
     tipo = (registro.get("tipo") or "").strip().lower()
@@ -68,16 +74,15 @@ def validar_transacao(registro: Mapping[str, str | None], linha: int) -> Transac
 
     texto_valor = (registro.get("valor") or "").strip().replace(",", ".")
     try:
-        valor = Decimal(texto_valor).quantize(CENTAVOS)
+        valor_float = float(texto_valor)
+        valor = Decimal(texto_valor)
+        valor.quantize(CENTAVOS)  # Confere se cabe na precisão monetária suportada.
     except (InvalidOperation, ValueError):
         return None
-    if not valor.is_finite() or valor <= 0:
+    if not math.isfinite(valor_float) or not valor.is_finite() or valor <= 0:
         return None
 
     descricao = (registro.get("descricao") or "").strip()
-    if not descricao:
-        return None
-
     categoria = (registro.get("categoria") or "").strip() or "sem categoria"
     return Transacao(
         id=id_transacao,
@@ -103,7 +108,10 @@ def ler_transacoes(caminho: str | Path) -> tuple[list[Transacao], int, int, int]
             if not leitor.fieldnames:
                 raise ErroArquivoTransacoes("O CSV está vazio ou não possui cabeçalho.")
 
-            nomes = {nome.strip().lower() for nome in leitor.fieldnames if nome}
+            leitor.fieldnames = [nome.strip().lower() for nome in leitor.fieldnames]
+            nomes = set(leitor.fieldnames)
+            if len(nomes) != len(leitor.fieldnames):
+                raise ErroArquivoTransacoes("Cabeçalhos duplicados no CSV.")
             ausentes = CABECALHOS_OBRIGATORIOS - nomes
             if ausentes:
                 lista = ", ".join(sorted(ausentes))
@@ -134,6 +142,8 @@ def ler_transacoes(caminho: str | Path) -> tuple[list[Transacao], int, int, int]
         raise ErroArquivoTransacoes(f"Arquivo não encontrado: {arquivo}") from exc
     except OSError as exc:
         raise ErroArquivoTransacoes(f"Não foi possível ler '{arquivo}': {exc}") from exc
+    except UnicodeError as exc:
+        raise ErroArquivoTransacoes("O CSV precisa usar codificação UTF-8.") from exc
     except csv.Error as exc:
         raise ErroArquivoTransacoes(f"CSV inválido em '{arquivo}': {exc}") from exc
 
@@ -193,10 +203,11 @@ def gerar_relatorio(
 
     primeira_data = min(item.data for item in itens)
     ultima_data = max(item.data for item in itens)
-    suspeitas = [item for item in itens if item.valor > LIMITE_SUSPEITO]
+    suspeitas = [item for item in itens if item.valor > LIMITE_SUSPEITO_DECIMAL]
+    data_referencia = gerado_em or date.today()
 
     return {
-        "gerado_em": (gerado_em or date.today()).isoformat(),
+        "gerado_em": data_referencia.isoformat(),
         "total_transacoes_lidas": total_validas + total_invalidas,
         "total_transacoes_validas": total_validas,
         "total_transacoes_invalidas": total_invalidas,
@@ -204,6 +215,8 @@ def gerar_relatorio(
             "data_inicial": primeira_data.strftime("%Y-%m-%d"),
             "data_final": ultima_data.strftime("%Y-%m-%d"),
             "dias_entre_transacoes": (ultima_data - primeira_data).days,
+            "dias_desde_mais_antiga": (data_referencia - primeira_data.date()).days,
+            "dias_desde_mais_recente": (data_referencia - ultima_data.date()).days,
         },
         "resumo_geral": _calcular_metricas(itens),
         "resumo_mensal": {
@@ -231,6 +244,9 @@ def exibir_relatorio(relatorio: Mapping) -> None:
         f"{periodo['data_inicial']} → {periodo['data_final']} "
         f"({periodo['dias_entre_transacoes']} dias)"
     )
+
+    print(f"Dias desde a mais antiga: {periodo['dias_desde_mais_antiga']}")
+    print(f"Dias desde a mais recente: {periodo['dias_desde_mais_recente']}")
 
     print("\n===== RELATÓRIO MENSAL =====")
     for mes, metricas in relatorio["resumo_mensal"].items():
@@ -269,7 +285,7 @@ def salvar_json(relatorio: Mapping, caminho: str | Path = "relatorio.json") -> N
     try:
         destino.parent.mkdir(parents=True, exist_ok=True)
         destino.write_text(
-            json.dumps(relatorio, ensure_ascii=False, indent=2) + "\n",
+            json.dumps(relatorio, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
             encoding="utf-8",
         )
     except OSError as exc:
