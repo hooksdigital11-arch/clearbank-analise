@@ -44,7 +44,7 @@ Erros de arquivo inexistente, cabeçalhos, codificação e gravação produzem m
 | Extra pandas | `pd.read_csv` e `groupby`; comparação de todas as métricas mensais com a versão nativa |
 | Extra Matplotlib | **Opção A: barras do saldo mensal**, com título e eixos; `grafico.png` e imagem no notebook |
 
-A conversão `float` é validada em `try/except`, como solicitado. O cálculo monetário usa `Decimal`, sem perder precisão antes da soma ou do teste de suspeita. Na apresentação/exportação, valores são arredondados para centavos com meio para par. Datas futuras produzem diferença negativa: não são tratadas como ocorridas no passado. Descrição é texto livre; categoria vazia recebe `sem categoria`. IDs duplicados são descartados depois da primeira ocorrência válida.
+A conversão `float` é validada em `try/except`, como solicitado. O cálculo monetário usa `Decimal`, sem perder precisão antes da soma ou do teste de suspeita. Na apresentação/exportação, valores são arredondados para centavos com meio para par. Datas futuras produzem diferença negativa: não são tratadas como ocorridas no passado. Descrição é texto livre; categoria vazia recebe `sem categoria`. IDs duplicados são descartados depois da primeira ocorrência válida. A alternativa pandas também descarta linhas com colunas excedentes antes de chamar `pd.read_csv`, para evitar inferência de índice ou interrupção por erro de estrutura. Campos textuais entre aspas, incluindo vírgulas e quebras de linha, são preservados.
 
 ## Organização
 

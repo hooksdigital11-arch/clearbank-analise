@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+from io import StringIO
 from decimal import Decimal
 from pathlib import Path
 
@@ -17,12 +18,24 @@ def ler_dados_validos(caminho: str | Path) -> pd.DataFrame:
     if not arquivo.is_file():
         raise FileNotFoundError(f"Arquivo não encontrado: {arquivo}")
 
-    # pandas renomeia cabeçalhos repetidos; confira-os antes para não ocultar o erro.
+    # pandas pode inferir um índice de colunas excedentes ou interromper a leitura.
+    # Normalize só a estrutura; as regras de negócio continuam no validador comum.
+    csv_normalizado = StringIO()
     with arquivo.open(encoding="utf-8-sig", newline="") as entrada:
-        nomes = [nome.strip().lower() for nome in next(csv.reader(entrada), [])]
-    if len(nomes) != len(set(nomes)):
-        raise ValueError("Cabeçalhos duplicados no CSV.")
-    dados = pd.read_csv(arquivo, dtype=str, encoding="utf-8-sig", keep_default_na=False)
+        leitor = csv.reader(entrada)
+        nomes = [nome.strip().lower() for nome in next(leitor, [])]
+        if not nomes:
+            raise ValueError("O CSV está vazio ou não possui cabeçalho.")
+        if len(nomes) != len(set(nomes)):
+            raise ValueError("Cabeçalhos duplicados no CSV.")
+        escritor = csv.writer(csv_normalizado)
+        escritor.writerow(nomes)
+        for campos in leitor:
+            if not campos or len(campos) > len(nomes):
+                continue
+            escritor.writerow(campos + [""] * (len(nomes) - len(campos)))
+    csv_normalizado.seek(0)
+    dados = pd.read_csv(csv_normalizado, dtype=str, keep_default_na=False)
     dados.columns = [coluna.strip().lower() for coluna in dados.columns]
     ausentes = CABECALHOS_OBRIGATORIOS - set(dados.columns)
     if ausentes:

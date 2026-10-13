@@ -97,3 +97,43 @@ class AuditRegressions(unittest.TestCase):
             for month, metrics in alternative.items():
                 for name in ["quantidade", "total_credito", "total_debito", "saldo", "media_por_transacao"]:
                     self.assertEqual(metrics[name], native[month][name], name)
+
+    def test_pandas_descarta_colunas_excedentes_em_qualquer_posicao(self):
+        try:
+            from analise_pandas import gerar_resumo_pandas
+        except ImportError:
+            self.skipTest("pandas opcional não instalado")
+        valida = list(registro().values())
+        excedente = list(registro(id="2", valor="20").values()) + ["extra"]
+        for linhas in [[excedente, valida], [valida, excedente]]:
+            with self.subTest(primeira=linhas[0][0]), tempfile.TemporaryDirectory() as tmp:
+                p = Path(tmp) / "dados.csv"
+                with p.open("w", encoding="utf-8", newline="") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(HEADER)
+                    writer.writerows(linhas)
+                items, _, valid, invalid = ler_transacoes(p)
+                native = gerar_relatorio(items, valid, invalid)["resumo_mensal"]
+                alternative = gerar_resumo_pandas(p)
+                self.assertEqual(valid, 1)
+                self.assertEqual(invalid, 1)
+                self.assertEqual(alternative["2026-01"]["quantidade"], 1)
+                self.assertEqual(alternative["2026-01"]["saldo"], native["2026-01"]["saldo"])
+
+    def test_pandas_preserva_campos_textuais_com_virgula_e_quebra_de_linha(self):
+        try:
+            from analise_pandas import gerar_resumo_pandas
+        except ImportError:
+            self.skipTest("pandas opcional não instalado")
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "dados.csv"
+            with p.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=HEADER)
+                writer.writeheader()
+                writer.writerow(registro(descricao="Compra, mercado\nsegunda linha"))
+                writer.writerow(registro(id="2", valor="2.50", tipo="debito"))
+            items, _, valid, invalid = ler_transacoes(p)
+            native = gerar_relatorio(items, valid, invalid)["resumo_mensal"]
+            alternative = gerar_resumo_pandas(p)
+            self.assertEqual(alternative["2026-01"]["saldo"], native["2026-01"]["saldo"])
+            self.assertEqual(alternative["2026-01"]["quantidade"], 2)
